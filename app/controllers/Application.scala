@@ -4,11 +4,12 @@ import play.api.mvc._
 import play.api.libs.ws.WS
 import scala.xml.XML.loadString
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.cache.Cache
+import play.api.cache.{EhCachePlugin, Cache}
 import scala.concurrent.{Promise, Future}
 import play.api.Play.current
 import scala.concurrent.duration._
 import com.github.mumoshu.play2.memcached.MemcachedPlugin
+import models.CurrencyRate
 
 object Application extends Controller {
 
@@ -24,40 +25,30 @@ object Application extends Controller {
 
   def ratesXml() = WS.url("http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml").get()
 
-  def rates(): Future[Seq[Currency]] = {
-    val p = Promise[Seq[Currency]]
+  def rates(): Future[Seq[CurrencyRate]] = {
+    val p = Promise[Seq[CurrencyRate]]
 
-    val currenciesFromCache = play.api.Play.current.plugin[MemcachedPlugin].get.api.get("rates")
-
+    val currenciesFromCache = play.api.Play.current.plugin[EhCachePlugin].get.api.get("rates")
     currenciesFromCache match {
-      case Some(currs) => {
-        println("using cache")
-        p.success(currs.asInstanceOf[Seq[Currency]])
+      case Some(currencies) => {
+        //println("using cache")
+        p.success(currencies.asInstanceOf[Seq[CurrencyRate]])
       }
       case None => {
         println("fetching")
-        fetchAndCacheSet(p)
+        for {
+          currencies <- fetchRates()
+        } yield {
+          play.api.Play.current.plugin[EhCachePlugin].get.api.set("rates", currencies, 3600)
+          p.success(currencies)
+        }
       }
     }
 
     p.future
   }
 
-  def fetchAndCacheSet(p: Promise[Seq[Currency]]) = {
-    for {
-      currencies <- fetchRates()
-    } yield {
-      play.api.Play.current.plugin[MemcachedPlugin].get.api.set("rates", currencies, 3600)
-      //Cache.set("rates", currencies, 1 minutes)
-      p.success(currencies)
-    }
-  }
-
-  case class Currency(symbol: String, rate: Float)
-
-  def currencies(xml: String) = {
-    (loadString(xml) \ "Cube" \ "Cube" \ "Cube")
-      .map(n => Currency((n \ "@currency").text, (n \ "@rate").text.toFloat))
-  }
+  def currencies(xml: String) = (loadString(xml) \ "Cube" \ "Cube" \ "Cube")
+    .map(n => CurrencyRate((n \ "@currency").text, (n \ "@rate").text.toFloat))
 
 }
