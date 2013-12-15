@@ -1,0 +1,11 @@
+@(currencies: Seq[Application.Currency])
+
+@main("currency rates") {
+
+    <ul>
+    @for(curr <- currencies) {
+        <li>@curr.symbol = @curr.rate</li>
+    }
+    </ul>
+
+}
