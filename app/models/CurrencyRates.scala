@@ -7,17 +7,18 @@ import scala.xml.XML._
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Play.current
 import play.api.libs.json.Json
+import scala.util.{Failure, Success, Try}
 
 object CurrencyRates {
 
   case class CurrencyRate(symbol: String, rate: Float)
   case class CurrencyInfo(symbol: String, name: String)
 
-  def fetchCurrencyRates(cache: Boolean = false, expirationInSecs: Int = 3600): Future[Seq[CurrencyRate]] =
+  def fetchCurrencyRates(cache: Boolean = false, expirationInSecs: Int = 3600): Future[Try[Seq[CurrencyRate]]] =
     if (cache) Cache.getOrElse("currency.rates", expirationInSecs) { getRates() }
       else getRates()
 
-  def fetchCurrencyNames(cache: Boolean = false, expirationInSecs: Int = 3600): Future[Seq[CurrencyInfo]] =
+  def fetchCurrencyNames(cache: Boolean = false, expirationInSecs: Int = 3600): Future[Try[Seq[CurrencyInfo]]] =
     if (cache) Cache.getOrElse("currency.names", expirationInSecs) { getNames() }
       else getNames()
 
@@ -26,15 +27,20 @@ object CurrencyRates {
         (currencySymbol, value) <- Json.parse(response.body).asInstanceOf[play.api.libs.json.JsObject].fieldSet
         currencyName = (value.asInstanceOf[play.api.libs.json.JsObject] \ "name").toString()
       } yield CurrencyInfo(currencySymbol, currencyName)
-
-       set.toSeq
-    })
+       Success(set.toSeq)
+    }
+  ) recover {
+    case t => Failure(t)
+  }
 
   private[models] def getRates() = fetchRatesXml.map(response => {
     val node = loadString(response.body)
-    (node \ "Cube" \ "Cube" \ "Cube")
+    val result = (node \ "Cube" \ "Cube" \ "Cube")
       .map(node => CurrencyRate((node \ "@currency").text, (node \ "@rate").text.toFloat))
-  })
+    Success(result)
+  }) recover {
+    case t => Failure(t)
+  }
 
   private[models] def fetchRatesXml() = WS.url("http://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml").get()
 

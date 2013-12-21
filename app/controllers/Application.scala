@@ -4,6 +4,7 @@ import play.api.mvc._
 import models.{CurrencyData, CurrencyRates}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 object Application extends Controller {
 
@@ -19,7 +20,8 @@ object Application extends Controller {
     for {
       rates <- CurrencyRates.fetchCurrencyRates(cache = true)
       infos <- CurrencyRates.fetchCurrencyNames(cache = true)
-    } yield Ok(views.html.index(toCurrencyData(rates, infos)))
+      if (rates.isSuccess && infos.isSuccess)
+    } yield Ok(views.html.index(toCurrencyData(rates.get, infos.get)))
   }
 
   def toCurrencyData(rates: Seq[CurrencyRates.CurrencyRate], infos: Seq[CurrencyRates.CurrencyInfo]) = for {
@@ -34,14 +36,24 @@ object Application extends Controller {
   def nameForCurrencySymbol(currencySymbol: String): Future[Seq[CurrencyRates.CurrencyRate]] = ratesForCurrencySymbol(List[String](currencySymbol))
 
   def ratesForCurrencySymbol(currencySymbol: List[String]): Future[Seq[CurrencyRates.CurrencyRate]] = {
+    val values: Future[Seq[CurrencyRates.CurrencyRate]] = CurrencyRates.fetchCurrencyRates(cache = true).collect {
+      case s @ Success(_) => s.get
+      case f @ Failure(_) => List[CurrencyRates.CurrencyRate]()
+    }
+
     for {
-      rates: Seq[CurrencyRates.CurrencyRate] <- CurrencyRates.fetchCurrencyRates(cache = true)
+      rates <- values
     } yield rates.filter(rate => currencySymbol.contains(rate.symbol))
   }
 
   def namesForCurrencySymbol(currencySymbol: List[String]): Future[Seq[CurrencyRates.CurrencyInfo]] = {
+    val values: Future[Seq[CurrencyRates.CurrencyInfo]] = CurrencyRates.fetchCurrencyNames(cache = true).collect {
+      case s @ Success(_) => s.get
+      case f @ Failure(_) => List[CurrencyRates.CurrencyInfo]()
+    }
+
     for {
-      infos: Seq[CurrencyRates.CurrencyInfo] <- CurrencyRates.fetchCurrencyNames(cache = true)
+      infos <- values
     } yield infos.filter(info => currencySymbol.contains(info.symbol))
   }
 
