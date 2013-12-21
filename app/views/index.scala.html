@@ -4,7 +4,7 @@
 
     <ul>
     @for(currencyData <- currencyDataList) {
-        <li>1 EUR (@currencyData.name) = @currencyData.rate @currencyData.symbol</li>
+        <li>1 EUR = @currencyData.rate @currencyData.symbol (@currencyData.name)</li>
     }
     </ul>
 

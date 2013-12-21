@@ -23,9 +23,9 @@ object CurrencyRates {
 
   private[models] def getNames() = fetchNamesJson().map(response => {
       val set = for {
-        (key, value) <- Json.parse(response.body).asInstanceOf[play.api.libs.json.JsObject].fieldSet
-        v = (value.asInstanceOf[play.api.libs.json.JsObject] \ "name").toString()
-      } yield CurrencyInfo(key, v)
+        (currencySymbol, value) <- Json.parse(response.body).asInstanceOf[play.api.libs.json.JsObject].fieldSet
+        currencyName = (value.asInstanceOf[play.api.libs.json.JsObject] \ "name").toString()
+      } yield CurrencyInfo(currencySymbol, currencyName)
 
        set.toSeq
     })

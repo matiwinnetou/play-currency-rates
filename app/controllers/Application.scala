@@ -12,15 +12,20 @@ object Application extends Controller {
     for {
       rates <- ratesForCurrencySymbol(currList)
       infos <- namesForCurrencySymbol(currList)
-    } yield {
-      val currencyData: Seq[CurrencyData] = for {
-        rate <- rates
-        info = infos.filter(info => info.symbol == rate.symbol).headOption
-      } yield CurrencyData(rate.symbol, info.map(info => info.name).getOrElse("?"), rate = rate.rate)
-
-      Ok(views.html.index(currencyData))
-    }
+    } yield Ok(views.html.index(toCurrencyData(rates, infos)))
   }
+
+  def all = Action.async {
+    for {
+      rates <- CurrencyRates.fetchCurrencyRates(cache = true)
+      infos <- CurrencyRates.fetchCurrencyNames(cache = true)
+    } yield Ok(views.html.index(toCurrencyData(rates, infos)))
+  }
+
+  def toCurrencyData(rates: Seq[CurrencyRates.CurrencyRate], infos: Seq[CurrencyRates.CurrencyInfo]) = for {
+    rate <- rates
+    info = infos.filter(info => info.symbol == rate.symbol).headOption
+  } yield CurrencyData(rate.symbol, info.map(info => info.name).getOrElse("?"), rate = rate.rate)
 
   def name(currencySymbol: String): Future[Seq[CurrencyRates.CurrencyRate]] = ratesForCurrencySymbol(List[String](currencySymbol))
 
