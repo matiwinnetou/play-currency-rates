@@ -37,8 +37,8 @@ object Application extends Controller {
 
   def ratesForCurrencySymbol(currencySymbol: List[String]): Future[Seq[CurrencyRates.CurrencyRate]] = {
     val values: Future[Seq[CurrencyRates.CurrencyRate]] = CurrencyRates.fetchCurrencyRates(cache = true).collect {
-      case s @ Success(_) => s.get
-      case f @ Failure(_) => List[CurrencyRates.CurrencyRate]()
+      case Success(v) => v
+      case Failure(t) => List[CurrencyRates.CurrencyRate]()
     }
 
     for {
@@ -48,8 +48,8 @@ object Application extends Controller {
 
   def namesForCurrencySymbol(currencySymbol: List[String]): Future[Seq[CurrencyRates.CurrencyInfo]] = {
     val values: Future[Seq[CurrencyRates.CurrencyInfo]] = CurrencyRates.fetchCurrencyNames(cache = true).collect {
-      case s @ Success(_) => s.get
-      case f @ Failure(_) => List[CurrencyRates.CurrencyInfo]()
+      case Success(v) => v
+      case Failure(t) => List[CurrencyRates.CurrencyInfo]()
     }
 
     for {
