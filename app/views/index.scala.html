@@ -1,10 +1,10 @@
-@(currencies: Seq[CurrencyRate])
+@(currencies: Seq[CurrencyRates.CurrencyRate])
 
 @main("currency rates") {
 
     <ul>
     @for(curr <- currencies) {
-        <li>@curr.symbol = @curr.rate</li>
+        <li>1 EUR = @curr.rate @curr.symbol</li>
     }
     </ul>
 
