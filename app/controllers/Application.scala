@@ -23,7 +23,7 @@ object Application extends Controller {
   } yield CurrencyData(currencyRate.symbol, currencyName, rate = currencyRate.rate)
 
   def recoverFn[T]: PartialFunction[Throwable, List[T]] = {
-    case t: Throwable => List()
+    case t: Throwable => List[T]()
   }
 
 }
