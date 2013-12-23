@@ -1,10 +1,10 @@
 @(currencyDataList: Seq[CurrencyData])
 
-@main("currency currencyRates") {
+@main("currency") {
 
     <ul>
     @for(currencyData <- currencyDataList) {
-        <li>1 EUR = @currencyData.rate @currencyData.symbol @if(currencyData.name.isDefined) { (@currencyData.name.get) }</li>
+        <li>1 EUR = @currencyData.rate @currencyData.symbol @currencyData.name.map { s => (@s) }</li>
     }
     </ul>
 

@@ -7,8 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object Application extends Controller {
 
   def index = Action.async {
-    val ratesF = CurrencyRates.fetchCurrencyRates(cache = false).recover(recoverFn[CurrencyRates.CurrencyRate])
-    val infosF = CurrencyRates.fetchCurrencyNames(cache = false).recover(recoverFn[CurrencyRates.CurrencyInfo])
+    val ratesF = CurrencyRates.fetchCurrencyRates(cache = true).recover(recoverFn[CurrencyRates.CurrencyRate])
+    val infosF = CurrencyRates.fetchCurrencyNames(cache = true).recover(recoverFn[CurrencyRates.CurrencyInfo])
 
     for {
       rates <- ratesF
