@@ -1,22 +1,27 @@
 package controllers
 
 import play.api.mvc._
-import models.{CurrencyData, CurrencyRates}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import models.CurrencyRates.{CurrencyRate, CurrencyInfo}
+import models.{CurrencyData, CurrencyRates}
 
 object Application extends Controller {
 
   def index = Action.async {
-    val ratesF = CurrencyRates.fetchCurrencyRates(cache = true).recover(recoverFn[CurrencyRates.CurrencyRate])
-    val infosF = CurrencyRates.fetchCurrencyNames(cache = true).recover(recoverFn[CurrencyRates.CurrencyInfo])
+    val ratesFuture: Future[Seq[CurrencyRate]] = CurrencyRates.fetchCurrencyRates(cache = true)
+      .recover(recoverFn[CurrencyRate])
+
+    val infosFuture: Future[Seq[CurrencyInfo]] = CurrencyRates.fetchCurrencyNames(cache = true)
+      .recover(recoverFn[CurrencyInfo])
 
     for {
-      rates <- ratesF
-      infos <- infosF
+      rates <- ratesFuture
+      infos <- infosFuture
     } yield Ok(views.html.index(toCurrencyData(rates, infos)))
   }
 
-  def toCurrencyData(currencyRates: Seq[CurrencyRates.CurrencyRate], currencyInfos: Seq[CurrencyRates.CurrencyInfo]) = for {
+  def toCurrencyData(currencyRates: Seq[CurrencyRate], currencyInfos: Seq[CurrencyInfo]) = for {
     currencyRate <- currencyRates
     currencyInfo = currencyInfos.filter(info => info.symbol == currencyRate.symbol).headOption
     currencyName = currencyInfo.map(currencyInfo => currencyInfo.name)

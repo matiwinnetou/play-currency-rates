@@ -6,6 +6,7 @@
     @for(currencyData <- currencyDataList) {
         <li>1 EUR = @currencyData.rate @currencyData.symbol @currencyData.name.map { s => (@s) }</li>
     }
+
     </ul>
 
 }
